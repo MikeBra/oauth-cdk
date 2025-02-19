@@ -1,0 +1,39 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.handler = void 0;
+const google_auth_library_1 = require("google-auth-library");
+const client = new google_auth_library_1.OAuth2Client({
+    clientId: process.env.GOOGLE_CLIENT_ID,
+    clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+    redirectUri: process.env.REDIRECT_URI,
+});
+const handler = async (event) => {
+    try {
+        const code = event.queryStringParameters?.code;
+        if (!code) {
+            return {
+                statusCode: 400,
+                body: JSON.stringify({ error: "Authorization code is required" }),
+            };
+        }
+        const { tokens } = await client.getToken(code);
+        // Here you might want to store the tokens in a secure location
+        // like AWS Secrets Manager or pass them to another service
+        return {
+            statusCode: 200,
+            body: JSON.stringify({
+                access_token: tokens.access_token,
+                id_token: tokens.id_token,
+            }),
+        };
+    }
+    catch (error) {
+        console.error("Error:", error);
+        return {
+            statusCode: 500,
+            body: JSON.stringify({ error: "Internal server error" }),
+        };
+    }
+};
+exports.handler = handler;
+//# sourceMappingURL=data:application/json;base64,eyJ2ZXJzaW9uIjozLCJmaWxlIjoiZ29vZ2xlLW9hdXRoLWNhbGxiYWNrLmpzIiwic291cmNlUm9vdCI6IiIsInNvdXJjZXMiOlsiZ29vZ2xlLW9hdXRoLWNhbGxiYWNrLnRzIl0sIm5hbWVzIjpbXSwibWFwcGluZ3MiOiI7OztBQUNBLDZEQUFrRDtBQUVsRCxNQUFNLE1BQU0sR0FBRyxJQUFJLGtDQUFZLENBQUM7SUFDL0IsUUFBUSxFQUFFLE9BQU8sQ0FBQyxHQUFHLENBQUMsZ0JBQWdCO0lBQ3RDLFlBQVksRUFBRSxPQUFPLENBQUMsR0FBRyxDQUFDLG9CQUFvQjtJQUM5QyxXQUFXLEVBQUUsT0FBTyxDQUFDLEdBQUcsQ0FBQyxZQUFZO0NBQ3JDLENBQUMsQ0FBQTtBQUVLLE1BQU0sT0FBTyxHQUFHLEtBQUssRUFDM0IsS0FBMkIsRUFDTSxFQUFFO0lBQ25DLElBQUksQ0FBQztRQUNKLE1BQU0sSUFBSSxHQUFHLEtBQUssQ0FBQyxxQkFBcUIsRUFBRSxJQUFJLENBQUE7UUFFOUMsSUFBSSxDQUFDLElBQUksRUFBRSxDQUFDO1lBQ1gsT0FBTztnQkFDTixVQUFVLEVBQUUsR0FBRztnQkFDZixJQUFJLEVBQUUsSUFBSSxDQUFDLFNBQVMsQ0FBQyxFQUFFLEtBQUssRUFBRSxnQ0FBZ0MsRUFBRSxDQUFDO2FBQ2pFLENBQUE7UUFDRixDQUFDO1FBRUQsTUFBTSxFQUFFLE1BQU0sRUFBRSxHQUFHLE1BQU0sTUFBTSxDQUFDLFFBQVEsQ0FBQyxJQUFJLENBQUMsQ0FBQTtRQUU5QywrREFBK0Q7UUFDL0QsMkRBQTJEO1FBRTNELE9BQU87WUFDTixVQUFVLEVBQUUsR0FBRztZQUNmLElBQUksRUFBRSxJQUFJLENBQUMsU0FBUyxDQUFDO2dCQUNwQixZQUFZLEVBQUUsTUFBTSxDQUFDLFlBQVk7Z0JBQ2pDLFFBQVEsRUFBRSxNQUFNLENBQUMsUUFBUTthQUN6QixDQUFDO1NBQ0YsQ0FBQTtJQUNGLENBQUM7SUFBQyxPQUFPLEtBQUssRUFBRSxDQUFDO1FBQ2hCLE9BQU8sQ0FBQyxLQUFLLENBQUMsUUFBUSxFQUFFLEtBQUssQ0FBQyxDQUFBO1FBQzlCLE9BQU87WUFDTixVQUFVLEVBQUUsR0FBRztZQUNmLElBQUksRUFBRSxJQUFJLENBQUMsU0FBUyxDQUFDLEVBQUUsS0FBSyxFQUFFLHVCQUF1QixFQUFFLENBQUM7U0FDeEQsQ0FBQTtJQUNGLENBQUM7QUFDRixDQUFDLENBQUE7QUFoQ1ksUUFBQSxPQUFPLFdBZ0NuQiIsInNvdXJjZXNDb250ZW50IjpbImltcG9ydCB7IEFQSUdhdGV3YXlQcm94eUV2ZW50LCBBUElHYXRld2F5UHJveHlSZXN1bHQgfSBmcm9tIFwiYXdzLWxhbWJkYVwiXG5pbXBvcnQgeyBPQXV0aDJDbGllbnQgfSBmcm9tIFwiZ29vZ2xlLWF1dGgtbGlicmFyeVwiXG5cbmNvbnN0IGNsaWVudCA9IG5ldyBPQXV0aDJDbGllbnQoe1xuXHRjbGllbnRJZDogcHJvY2Vzcy5lbnYuR09PR0xFX0NMSUVOVF9JRCxcblx0Y2xpZW50U2VjcmV0OiBwcm9jZXNzLmVudi5HT09HTEVfQ0xJRU5UX1NFQ1JFVCxcblx0cmVkaXJlY3RVcmk6IHByb2Nlc3MuZW52LlJFRElSRUNUX1VSSSxcbn0pXG5cbmV4cG9ydCBjb25zdCBoYW5kbGVyID0gYXN5bmMgKFxuXHRldmVudDogQVBJR2F0ZXdheVByb3h5RXZlbnRcbik6IFByb21pc2U8QVBJR2F0ZXdheVByb3h5UmVzdWx0PiA9PiB7XG5cdHRyeSB7XG5cdFx0Y29uc3QgY29kZSA9IGV2ZW50LnF1ZXJ5U3RyaW5nUGFyYW1ldGVycz8uY29kZVxuXG5cdFx0aWYgKCFjb2RlKSB7XG5cdFx0XHRyZXR1cm4ge1xuXHRcdFx0XHRzdGF0dXNDb2RlOiA0MDAsXG5cdFx0XHRcdGJvZHk6IEpTT04uc3RyaW5naWZ5KHsgZXJyb3I6IFwiQXV0aG9yaXphdGlvbiBjb2RlIGlzIHJlcXVpcmVkXCIgfSksXG5cdFx0XHR9XG5cdFx0fVxuXG5cdFx0Y29uc3QgeyB0b2tlbnMgfSA9IGF3YWl0IGNsaWVudC5nZXRUb2tlbihjb2RlKVxuXG5cdFx0Ly8gSGVyZSB5b3UgbWlnaHQgd2FudCB0byBzdG9yZSB0aGUgdG9rZW5zIGluIGEgc2VjdXJlIGxvY2F0aW9uXG5cdFx0Ly8gbGlrZSBBV1MgU2VjcmV0cyBNYW5hZ2VyIG9yIHBhc3MgdGhlbSB0byBhbm90aGVyIHNlcnZpY2VcblxuXHRcdHJldHVybiB7XG5cdFx0XHRzdGF0dXNDb2RlOiAyMDAsXG5cdFx0XHRib2R5OiBKU09OLnN0cmluZ2lmeSh7XG5cdFx0XHRcdGFjY2Vzc190b2tlbjogdG9rZW5zLmFjY2Vzc190b2tlbixcblx0XHRcdFx0aWRfdG9rZW46IHRva2Vucy5pZF90b2tlbixcblx0XHRcdH0pLFxuXHRcdH1cblx0fSBjYXRjaCAoZXJyb3IpIHtcblx0XHRjb25zb2xlLmVycm9yKFwiRXJyb3I6XCIsIGVycm9yKVxuXHRcdHJldHVybiB7XG5cdFx0XHRzdGF0dXNDb2RlOiA1MDAsXG5cdFx0XHRib2R5OiBKU09OLnN0cmluZ2lmeSh7IGVycm9yOiBcIkludGVybmFsIHNlcnZlciBlcnJvclwiIH0pLFxuXHRcdH1cblx0fVxufVxuIl19

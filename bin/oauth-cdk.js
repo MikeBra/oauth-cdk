@@ -1,0 +1,14 @@
+#!/usr/bin/env node
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+require("./load-env");
+const cdk = require("aws-cdk-lib");
+const google_oauth_cdk_stack_1 = require("../lib/google-oauth-cdk-stack");
+const app = new cdk.App();
+new google_oauth_cdk_stack_1.GoogleOAuthCdkStack(app, "GoogleOAuthCdkStack", {
+    env: {
+        account: process.env.CDK_DEFAULT_ACCOUNT,
+        region: process.env.CDK_DEFAULT_REGION,
+    },
+});
+//# sourceMappingURL=data:application/json;base64,eyJ2ZXJzaW9uIjozLCJmaWxlIjoib2F1dGgtY2RrLmpzIiwic291cmNlUm9vdCI6IiIsInNvdXJjZXMiOlsib2F1dGgtY2RrLnRzIl0sIm5hbWVzIjpbXSwibWFwcGluZ3MiOiI7OztBQUNBLHNCQUFtQjtBQUNuQixtQ0FBa0M7QUFDbEMsMEVBQW1FO0FBRW5FLE1BQU0sR0FBRyxHQUFHLElBQUksR0FBRyxDQUFDLEdBQUcsRUFBRSxDQUFBO0FBQ3pCLElBQUksNENBQW1CLENBQUMsR0FBRyxFQUFFLHFCQUFxQixFQUFFO0lBQ25ELEdBQUcsRUFBRTtRQUNKLE9BQU8sRUFBRSxPQUFPLENBQUMsR0FBRyxDQUFDLG1CQUFtQjtRQUN4QyxNQUFNLEVBQUUsT0FBTyxDQUFDLEdBQUcsQ0FBQyxrQkFBa0I7S0FDdEM7Q0FDRCxDQUFDLENBQUEiLCJzb3VyY2VzQ29udGVudCI6WyIjIS91c3IvYmluL2VudiBub2RlXG5pbXBvcnQgXCIuL2xvYWQtZW52XCJcbmltcG9ydCAqIGFzIGNkayBmcm9tIFwiYXdzLWNkay1saWJcIlxuaW1wb3J0IHsgR29vZ2xlT0F1dGhDZGtTdGFjayB9IGZyb20gXCIuLi9saWIvZ29vZ2xlLW9hdXRoLWNkay1zdGFja1wiXG5cbmNvbnN0IGFwcCA9IG5ldyBjZGsuQXBwKClcbm5ldyBHb29nbGVPQXV0aENka1N0YWNrKGFwcCwgXCJHb29nbGVPQXV0aENka1N0YWNrXCIsIHtcblx0ZW52OiB7XG5cdFx0YWNjb3VudDogcHJvY2Vzcy5lbnYuQ0RLX0RFRkFVTFRfQUNDT1VOVCxcblx0XHRyZWdpb246IHByb2Nlc3MuZW52LkNES19ERUZBVUxUX1JFR0lPTixcblx0fSxcbn0pXG4iXX0=
