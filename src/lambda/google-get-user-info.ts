@@ -33,14 +33,17 @@ export const handler = async (
 			body: JSON.stringify({
 				email: payload?.email,
 				name: payload?.name,
+				sub: payload?.sub,
+				locale: payload?.locale,
+				exp: payload?.exp,
 				picture: payload?.picture,
 			}),
 		}
 	} catch (error) {
-		console.error("Error:", error)
+		// console.error("Error:", error)
 		return {
-			statusCode: 500,
-			body: JSON.stringify({ error: "Internal server error" }),
+			statusCode: 401,
+			body: JSON.stringify({ error: "Invalid token" }),
 		}
 	}
 }

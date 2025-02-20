@@ -1,8 +1,6 @@
 import { APIGatewayProxyEvent } from "aws-lambda"
 import { handler } from "../../src/lambda/google-oauth-callback"
 import * as googleOAuthUtils from "../../src/utils/google-oauth-utils"
-import { OAuth2Client } from "google-auth-library"
-import { GaxiosError } from "gaxios"
 
 interface APIGatewayProxyEventWithCookies extends APIGatewayProxyEvent {
 	cookies?: string[]
