@@ -1,2 +1,6 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from "aws-lambda";
-export declare const handler: (event: APIGatewayProxyEvent) => Promise<APIGatewayProxyResult>;
+interface APIGatewayProxyEventWithCookies extends APIGatewayProxyEvent {
+    cookies?: string[];
+}
+export declare const handler: (event: APIGatewayProxyEventWithCookies) => Promise<APIGatewayProxyResult>;
+export {};

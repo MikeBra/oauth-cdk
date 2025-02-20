@@ -1,12 +1,12 @@
-import { SecretsManager } from "aws-sdk"
+import { SecretsManager } from "@aws-sdk/client-secrets-manager"
 
-const secretsManager = new SecretsManager()
+const secretsManager = new SecretsManager({})
 
 export const getConfig = async () => {
 	if (process.env.SECRET_ARN) {
-		const { SecretString } = await secretsManager
-			.getSecretValue({ SecretId: process.env.SECRET_ARN })
-			.promise()
+		const { SecretString } = await secretsManager.getSecretValue({
+			SecretId: process.env.SECRET_ARN,
+		})
 
 		const secrets = JSON.parse(SecretString || "{}")
 

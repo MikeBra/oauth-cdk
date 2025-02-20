@@ -8,6 +8,7 @@
 		"build": "tsc",
 		"watch": "tsc -w",
 		"test": "jest",
+		"test:watch": "jest --watch",
 		"deploy": "cdk deploy",
 		"destroy": "cdk destroy"
 	},
@@ -22,10 +23,9 @@
 		"typescript": "~5.6.3"
 	},
 	"dependencies": {
-		"@types/aws-sdk": "^0.0.42",
+		"@aws-sdk/client-secrets-manager": "^3.750.0",
 		"@types/dotenv": "^6.1.1",
 		"aws-cdk-lib": "2.179.0",
-		"aws-sdk": "^2.1692.0",
 		"constructs": "^10.0.0",
 		"dotenv": "^16.4.7",
 		"google-auth-library": "^9.6.3"
