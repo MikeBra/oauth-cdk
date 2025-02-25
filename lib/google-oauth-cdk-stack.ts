@@ -8,36 +8,60 @@ export class GoogleOAuthCdkStack extends cdk.Stack {
 	constructor(scope: cdk.App, id: string, props?: cdk.StackProps) {
 		super(scope, id, props)
 
-		// Environment variables for the Lambda functions
-		const environment = {
-			GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID || "",
-			GOOGLE_CLIENT_SECRET: process.env.GOOGLE_CLIENT_SECRET || "",
-			REDIRECT_URI: process.env.REDIRECT_URI || "",
-		}
-
 		// OAuth Callback Lambda
-		const oauthCallbackLambda = new lambda.Function(
+		const oauthCallbackLambda = new nodejs.NodejsFunction(
 			this,
 			"OAuthCallbackHandler",
 			{
 				runtime: lambda.Runtime.NODEJS_18_X,
-				handler: "oauth-callback.handler",
-				code: lambda.Code.fromAsset(path.join(__dirname, "../src/lambda")),
-				environment,
-			}
-		)
-
-		// Get User Info Lambda
-		const getUserInfoFunction = new nodejs.NodejsFunction(
-			this,
-			"GetUserInfoFunction",
-			{
-				runtime: lambda.Runtime.NODEJS_18_X,
-				entry: path.join(__dirname, "../src/lambda/google-get-user-info.ts"),
+				entry: path.join(__dirname, "../src/lambda/google-oauth-callback.ts"),
 				handler: "handler",
 				environment: {
 					GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID!,
 					GOOGLE_CLIENT_SECRET: process.env.GOOGLE_CLIENT_SECRET!,
+					REDIRECT_URI: process.env.REDIRECT_URI!,
+					FRONTEND_URL: process.env.FRONTEND_URL!,
+					JWT_SECRET: process.env.JWT_SECRET!,
+				},
+				bundling: {
+					forceDockerBundling: true,
+					minify: true,
+					sourceMap: true,
+				},
+			}
+		)
+
+		// Session info Lambda
+		const getSessionInfoFunction = new nodejs.NodejsFunction(
+			this,
+			"GetSessionInfoFunction",
+			{
+				runtime: lambda.Runtime.NODEJS_18_X,
+				entry: path.join(__dirname, "../src/lambda/get-session-info.ts"),
+				handler: "handler",
+				environment: {
+					JWT_SECRET: process.env.JWT_SECRET!,
+				},
+				bundling: {
+					forceDockerBundling: true,
+					minify: true,
+					sourceMap: true,
+				},
+			}
+		)
+
+		// Signout Lambda
+		const signoutFunction = new nodejs.NodejsFunction(
+			this,
+			"SignoutFunction",
+			{
+				runtime: lambda.Runtime.NODEJS_18_X,
+				entry: path.join(__dirname, "../src/lambda/signout.ts"),
+				handler: "handler",
+				bundling: {
+					forceDockerBundling: true,
+					minify: true,
+					sourceMap: true,
 				},
 			}
 		)
@@ -55,14 +79,43 @@ export class GoogleOAuthCdkStack extends cdk.Stack {
 			new apigateway.LambdaIntegration(oauthCallbackLambda)
 		)
 
-		// User info endpoint
-		const userInfo = api.root.addResource("user-info")
-		userInfo.addMethod(
+		// Add session info endpoint
+		const auth = api.root.addResource("auth")
+		const session = auth.addResource("session")
+
+		// First: Add CORS preflight
+		session.addCorsPreflight({
+			allowOrigins: ["http://localhost:3000"],
+			allowMethods: ["GET", "OPTIONS"],
+			allowHeaders: ["Content-Type", "Authorization"],
+			allowCredentials: true,
+			exposeHeaders: ["Set-Cookie"],
+		})
+
+		// Then: Add the method
+		session.addMethod(
 			"GET",
-			new apigateway.LambdaIntegration(getUserInfoFunction),
+			new apigateway.LambdaIntegration(getSessionInfoFunction),
 			{
-				authorizationType: apigateway.AuthorizationType.NONE, // Since we're using Google's tokens
+				authorizationType: apigateway.AuthorizationType.NONE,
 			}
+		)
+
+		// Add signout endpoint
+		const signout = auth.addResource("signout")
+
+		// First: CORS
+		signout.addCorsPreflight({
+			allowOrigins: ["http://localhost:3000"],
+			allowMethods: ["POST", "OPTIONS"],
+			allowHeaders: ["Content-Type", "Authorization"],
+			allowCredentials: true,
+		})
+
+		// Then: Method
+		signout.addMethod(
+			"POST",
+			new apigateway.LambdaIntegration(signoutFunction)
 		)
 
 		// Output the API URL

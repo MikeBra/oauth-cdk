@@ -5,11 +5,13 @@
 		"oauth-cdk": "bin/oauth-cdk.js"
 	},
 	"scripts": {
-		"build": "tsc",
+		"build": "npm test && tsc",
 		"clean": "rm -rf dist",
 		"prebuild": "npm run clean",
 		"watch": "tsc -w",
-		"test": "jest",
+		"test:unit": "jest test/lambda/",
+		"test:cdk": "jest test/google-oauth-cdk.test.ts",
+		"test": "npm run test:unit && npm run test:cdk",
 		"test:watch": "jest --watch",
 		"deploy": "cdk deploy",
 		"destroy": "cdk destroy"
@@ -17,6 +19,7 @@
 	"devDependencies": {
 		"@types/aws-lambda": "^8.10.136",
 		"@types/jest": "^29.5.14",
+		"@types/jsonwebtoken": "^9.0.9",
 		"@types/node": "22.7.9",
 		"aws-cdk": "2.1000.2",
 		"aws-sdk-client-mock": "^4.1.0",
@@ -30,6 +33,7 @@
 		"aws-cdk-lib": "2.179.0",
 		"constructs": "^10.0.0",
 		"dotenv": "^16.4.7",
-		"google-auth-library": "^9.6.3"
+		"google-auth-library": "^9.6.3",
+		"jsonwebtoken": "^9.0.2"
 	}
 }

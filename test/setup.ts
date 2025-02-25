@@ -1,3 +1,5 @@
 process.env.GOOGLE_CLIENT_ID = "test-client-id"
 process.env.GOOGLE_CLIENT_SECRET = "test-client-secret"
-process.env.REDIRECT_URI = "http://localhost:3000/callback"
+process.env.REDIRECT_URI = "test-redirect-uri"
+process.env.FRONTEND_URL = "http://localhost:3000"
+process.env.JWT_SECRET = "test-jwt-secret"

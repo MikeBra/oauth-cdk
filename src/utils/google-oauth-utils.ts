@@ -18,18 +18,3 @@ export const getAuthUrl = (state?: string) => {
 		prompt: "consent",
 	})
 }
-
-export const validateIdToken = async (idToken: string) => {
-	const client = createOAuthClient()
-	const ticket = await client.verifyIdToken({
-		idToken,
-		audience: config.googleClientId,
-	})
-	return ticket.getPayload()
-}
-
-export const getTokens = async (code: string) => {
-	const client = createOAuthClient()
-	const { tokens } = await client.getToken(code)
-	return { tokens }
-}

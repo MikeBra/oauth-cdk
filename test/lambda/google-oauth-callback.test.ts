@@ -54,10 +54,11 @@ describe("Google OAuth Callback Handler", () => {
 
 		const response = await handler(mockEvent as APIGatewayProxyEvent)
 
-		expect(response.statusCode).toBe(200)
-		expect(JSON.parse(response.body)).toEqual({
-			id_token: "mock-id-token",
-		})
+		expect(response.statusCode).toBe(302)
+		// Convert both URLs to URL objects to normalize slashes and compare
+		const locationUrl = new URL(response.headers?.Location as string)
+		const frontendUrl = new URL(process.env.FRONTEND_URL as string)
+		expect(locationUrl.origin).toBe(frontendUrl.origin)
 	})
 
 	it("should handle missing code parameter", async () => {
