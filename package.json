@@ -13,7 +13,7 @@
 		"test:cdk": "jest test/google-oauth-cdk.test.ts",
 		"test": "npm run test:unit && npm run test:cdk",
 		"test:watch": "jest --watch",
-		"deploy": "cdk deploy",
+		"deploy": "cdk deploy --require-approval never",
 		"destroy": "cdk destroy"
 	},
 	"devDependencies": {

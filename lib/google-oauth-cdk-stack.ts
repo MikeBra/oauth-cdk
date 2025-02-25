@@ -66,6 +66,21 @@ export class GoogleOAuthCdkStack extends cdk.Stack {
 			}
 		)
 
+		// Add signin Lambda
+		const signinFunction = new nodejs.NodejsFunction(this, "SigninFunction", {
+			runtime: lambda.Runtime.NODEJS_18_X,
+			entry: path.join(__dirname, "../src/lambda/signin.ts"),
+			handler: "handler",
+			environment: {
+				JWT_SECRET: process.env.JWT_SECRET!,
+			},
+			bundling: {
+				forceDockerBundling: true,
+				minify: true,
+				sourceMap: true,
+			},
+		})
+
 		// API Gateway
 		const api = new apigateway.RestApi(this, "GoogleOAuthApi", {
 			restApiName: "Google OAuth API",
@@ -116,6 +131,26 @@ export class GoogleOAuthCdkStack extends cdk.Stack {
 		signout.addMethod(
 			"POST",
 			new apigateway.LambdaIntegration(signoutFunction)
+		)
+
+		// Add signin endpoint
+		const signin = auth.addResource("signin")
+
+		// Add CORS preflight
+		signin.addCorsPreflight({
+			allowOrigins: ["http://localhost:3000"],
+			allowMethods: ["POST", "OPTIONS"],
+			allowHeaders: ["Content-Type", "Authorization"],
+			allowCredentials: true,
+		})
+
+		// Add method
+		signin.addMethod(
+			"POST",
+			new apigateway.LambdaIntegration(signinFunction),
+			{
+				authorizationType: apigateway.AuthorizationType.NONE,
+			}
 		)
 
 		// Output the API URL
