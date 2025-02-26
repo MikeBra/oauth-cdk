@@ -2,9 +2,15 @@ import { APIGatewayProxyEvent } from "aws-lambda"
 import { handler } from "../../src/lambda/signin"
 
 describe("signin handler", () => {
+	beforeAll(() => {
+		process.env.FRONTEND_TEST_URL = "http://localhost:3000"
+	})
+
 	const mockEvent = (body: any): APIGatewayProxyEvent => ({
 		body: JSON.stringify(body),
-		headers: {},
+		headers: {
+			origin: process.env.FRONTEND_TEST_URL,
+		},
 		multiValueHeaders: {},
 		httpMethod: "POST",
 		isBase64Encoded: false,
@@ -21,6 +27,9 @@ describe("signin handler", () => {
 		const event = mockEvent({
 			email: "test@example.com",
 			password: "password123",
+			headers: {
+				origin: process.env.FRONTEND_TEST_URL,
+			},
 		})
 
 		const response = await handler(event)
@@ -28,7 +37,7 @@ describe("signin handler", () => {
 		expect(response.statusCode).toBe(200)
 		expect(response.headers).toEqual(
 			expect.objectContaining({
-				"Access-Control-Allow-Origin": "http://localhost:3000",
+				"Access-Control-Allow-Origin": process.env.FRONTEND_TEST_URL!,
 				"Access-Control-Allow-Credentials": "true",
 				"Set-Cookie": expect.stringContaining("session="),
 			})

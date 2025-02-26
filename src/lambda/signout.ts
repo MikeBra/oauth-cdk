@@ -1,13 +1,11 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from "aws-lambda"
-
-const corsHeaders = {
-	"Access-Control-Allow-Origin": "http://localhost:3000",
-	"Access-Control-Allow-Credentials": "true",
-}
+import { getCorsHeaders } from "../utils/cors-headers"
 
 export const handler = async (
 	event: APIGatewayProxyEvent
 ): Promise<APIGatewayProxyResult> => {
+	const corsHeaders = getCorsHeaders(event)
+
 	return {
 		statusCode: 200,
 		headers: {

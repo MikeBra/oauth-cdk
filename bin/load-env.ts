@@ -8,8 +8,10 @@ dotenv.config({ path: path.join(__dirname, "..", ".env") })
 const requiredEnvVars = [
 	"GOOGLE_CLIENT_ID",
 	"GOOGLE_CLIENT_SECRET",
+	"MY_APP_DOMAIN",
 	"REDIRECT_URI",
-	"FRONTEND_URL",
+	"FRONTEND_TEST_URL",
+	"FRONTEND_PROD_URL",
 	"JWT_SECRET",
 ]
 

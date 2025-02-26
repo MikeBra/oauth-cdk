@@ -20,8 +20,9 @@ export class GoogleOAuthCdkStack extends cdk.Stack {
 					GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID!,
 					GOOGLE_CLIENT_SECRET: process.env.GOOGLE_CLIENT_SECRET!,
 					REDIRECT_URI: process.env.REDIRECT_URI!,
-					FRONTEND_URL: process.env.FRONTEND_URL!,
+					FRONTEND_PROD_URL: process.env.FRONTEND_PROD_URL!,
 					JWT_SECRET: process.env.JWT_SECRET!,
+					MY_APP_DOMAIN: process.env.MY_APP_DOMAIN!,
 				},
 				bundling: {
 					forceDockerBundling: true,
@@ -41,6 +42,8 @@ export class GoogleOAuthCdkStack extends cdk.Stack {
 				handler: "handler",
 				environment: {
 					JWT_SECRET: process.env.JWT_SECRET!,
+					FRONTEND_PROD_URL: process.env.FRONTEND_PROD_URL!,
+					MY_APP_DOMAIN: process.env.MY_APP_DOMAIN!,
 				},
 				bundling: {
 					forceDockerBundling: true,
@@ -58,6 +61,10 @@ export class GoogleOAuthCdkStack extends cdk.Stack {
 				runtime: lambda.Runtime.NODEJS_18_X,
 				entry: path.join(__dirname, "../src/lambda/signout.ts"),
 				handler: "handler",
+				environment: {
+					FRONTEND_PROD_URL: process.env.FRONTEND_PROD_URL!,
+					MY_APP_DOMAIN: process.env.MY_APP_DOMAIN!,
+				},
 				bundling: {
 					forceDockerBundling: true,
 					minify: true,
@@ -73,6 +80,8 @@ export class GoogleOAuthCdkStack extends cdk.Stack {
 			handler: "handler",
 			environment: {
 				JWT_SECRET: process.env.JWT_SECRET!,
+				FRONTEND_PROD_URL: process.env.FRONTEND_PROD_URL!,
+				FRONTEND_TEST_URL: process.env.FRONTEND_TEST_URL!,
 			},
 			bundling: {
 				forceDockerBundling: true,
@@ -99,8 +108,12 @@ export class GoogleOAuthCdkStack extends cdk.Stack {
 		const session = auth.addResource("session")
 
 		// First: Add CORS preflight
+		// BUGBUG Use request origin from header rather than hardcoded urls
 		session.addCorsPreflight({
-			allowOrigins: ["http://localhost:3000"],
+			allowOrigins: [
+				process.env.FRONTEND_TEST_URL!,
+				process.env.FRONTEND_PROD_URL!,
+			],
 			allowMethods: ["GET", "OPTIONS"],
 			allowHeaders: ["Content-Type", "Authorization"],
 			allowCredentials: true,
@@ -121,7 +134,10 @@ export class GoogleOAuthCdkStack extends cdk.Stack {
 
 		// First: CORS
 		signout.addCorsPreflight({
-			allowOrigins: ["http://localhost:3000"],
+			allowOrigins: [
+				process.env.FRONTEND_PROD_URL!,
+				process.env.MY_APP_DOMAIN!,
+			],
 			allowMethods: ["POST", "OPTIONS"],
 			allowHeaders: ["Content-Type", "Authorization"],
 			allowCredentials: true,
@@ -138,7 +154,10 @@ export class GoogleOAuthCdkStack extends cdk.Stack {
 
 		// Add CORS preflight
 		signin.addCorsPreflight({
-			allowOrigins: ["http://localhost:3000"],
+			allowOrigins: [
+				process.env.FRONTEND_PROD_URL!,
+				process.env.FRONTEND_TEST_URL!,
+			],
 			allowMethods: ["POST", "OPTIONS"],
 			allowHeaders: ["Content-Type", "Authorization"],
 			allowCredentials: true,

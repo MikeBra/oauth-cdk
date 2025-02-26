@@ -80,10 +80,11 @@ export const handler = async (
 
 		// Generate a session token or JWT
 		// const sessionToken = createSession(tokens.access_token)
-
-		if (!process.env.FRONTEND_URL) {
-			throw new Error("FRONTEND_URL is not configured")
-		}
+		const origin =
+			event.headers.origin ||
+			event.headers.Origin ||
+			process.env.FRONTEND_PROD_URL ||
+			"http://localhost:3000"
 
 		// Redirect back to the frontend
 		return {
@@ -91,7 +92,7 @@ export const handler = async (
 			headers: {
 				// bugbug When the front end and backend are using the same domain, we can use the Strict SameSite attribute.
 				"Set-Cookie": `session=${sessionToken}; HttpOnly; Secure; SameSite=None; Path=/; Max-Age=3600`,
-				Location: process.env.FRONTEND_URL,
+				Location: origin,
 			},
 			body: "", // Required by API Gateway
 		}

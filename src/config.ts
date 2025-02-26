@@ -14,7 +14,7 @@ export const getConfig = async () => {
 			googleClientId: secrets.GOOGLE_CLIENT_ID,
 			googleClientSecret: secrets.GOOGLE_CLIENT_SECRET,
 			redirectUri: secrets.REDIRECT_URI,
-			frontEndUrl: secrets.FRONTEND_URL,
+			frontEndUrl: secrets.FRONTEND_PROD_URL,
 			jwtSecret: secrets.JWT_SECRET,
 			// Add additional scopes as needed
 			scopes: ["openid", "profile", "email"],
@@ -26,7 +26,7 @@ export const getConfig = async () => {
 		googleClientId: process.env.GOOGLE_CLIENT_ID,
 		googleClientSecret: process.env.GOOGLE_CLIENT_SECRET,
 		redirectUri: process.env.REDIRECT_URI,
-		frontEndUrl: process.env.FRONTEND_URL,
+		frontEndUrl: process.env.FRONTEND_PROD_URL,
 		jwtSecret: process.env.JWT_SECRET,
 		// Add additional scopes as needed
 		scopes: ["openid", "profile", "email"],
@@ -37,7 +37,7 @@ export const config = {
 	googleClientId: process.env.GOOGLE_CLIENT_ID!,
 	googleClientSecret: process.env.GOOGLE_CLIENT_SECRET!,
 	redirectUri: process.env.REDIRECT_URI!,
-	frontEndUrl: process.env.FRONTEND_URL!,
+	frontEndUrl: process.env.FRONTEND_PROD_URL!,
 	jwtSecret: process.env.JWT_SECRET!,
 	scopes: [
 		"https://www.googleapis.com/auth/userinfo.profile",
