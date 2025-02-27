@@ -31,7 +31,6 @@ export const handler = async (
 ): Promise<APIGatewayProxyResult> => {
 	try {
 		const code = event.queryStringParameters?.code
-		const state = event.queryStringParameters?.state
 
 		// 1. Validate the Authorization Code
 		if (!code) {
@@ -42,14 +41,37 @@ export const handler = async (
 		}
 
 		// 2. Validate the State Parameter (CSRF Protection)
-		// Retrieve the stored state from the cookie
+		// state param is base64 encoded JSON both a random token and the frontend origin
+		const state = event.queryStringParameters?.state
+		if (!state) {
+			return {
+				statusCode: 401,
+				body: JSON.stringify({ error: "Missing state parameter" }),
+			}
+		}
+
+		let stateObj
+		try {
+			stateObj = JSON.parse(Buffer.from(state, "base64").toString())
+			if (!stateObj?.randomToken || !stateObj?.frontendOrigin) {
+				throw new Error("Invalid or missing state parameter")
+			}
+		} catch (error) {
+			return {
+				statusCode: 401,
+				body: JSON.stringify({ error: "Invalid or missing state parameter" }),
+			}
+		}
+
+		const { randomToken, frontendOrigin } = stateObj
+
 		const cookieState = true // bugbug rework code
 			? "test_state"
 			: event.cookies
 					?.find((cookie) => cookie.startsWith("oauth_state="))
 					?.split("=")[1]
 
-		if (!state || state !== cookieState) {
+		if (!randomToken || randomToken !== cookieState) {
 			return {
 				statusCode: 401,
 				body: JSON.stringify({ error: "Invalid or missing state parameter" }),
@@ -78,24 +100,22 @@ export const handler = async (
 		// Generate a secure session token (e.g., JWT or a secure cookie)
 		const sessionToken = generateSessionToken(tokenPayload)
 
-		// Generate a session token or JWT
-		// const sessionToken = createSession(tokens.access_token)
-		const origin =
-			event.headers.origin ||
-			event.headers.Origin ||
-			process.env.FRONTEND_PROD_URL ||
-			"http://localhost:3000"
-
 		// Redirect back to the frontend
-		return {
+		const response = {
 			statusCode: 302,
 			headers: {
 				// bugbug When the front end and backend are using the same domain, we can use the Strict SameSite attribute.
 				"Set-Cookie": `session=${sessionToken}; HttpOnly; Secure; SameSite=None; Path=/; Max-Age=3600`,
-				Location: origin,
+				Location: frontendOrigin,
 			},
 			body: "", // Required by API Gateway
 		}
+		console.log("OAuth callback successful response:", {
+			statusCode: response.statusCode,
+			headers: response.headers,
+			redirectLocation: response.headers.Location,
+		})
+		return response
 	} catch (error) {
 		console.error("Detailed error:", {
 			message: (error as Error).message,
@@ -104,12 +124,14 @@ export const handler = async (
 			stack: (error as Error).stack,
 		})
 
-		return {
+		const errorResponse = {
 			statusCode: 401,
 			body: JSON.stringify({
 				error: "Invalid token",
 				details: (error as Error).message,
 			}),
 		}
+		console.log("OAuth callback error response:", errorResponse)
+		return errorResponse
 	}
 }

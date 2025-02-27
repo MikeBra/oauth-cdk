@@ -9,25 +9,26 @@ export class GoogleOAuthCdkStack extends cdk.Stack {
 		super(scope, id, props)
 
 		// OAuth Callback Lambda
-		const oauthCallbackLambda = new nodejs.NodejsFunction(
+		const oauthCallbackFunction = new nodejs.NodejsFunction(
 			this,
-			"OAuthCallbackHandler",
+			"OAuthCallbackFunction",
 			{
 				runtime: lambda.Runtime.NODEJS_18_X,
 				entry: path.join(__dirname, "../src/lambda/google-oauth-callback.ts"),
 				handler: "handler",
+				bundling: {
+					forceDockerBundling: true,
+					minify: true,
+					sourceMap: true,
+				},
 				environment: {
 					GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID!,
 					GOOGLE_CLIENT_SECRET: process.env.GOOGLE_CLIENT_SECRET!,
 					REDIRECT_URI: process.env.REDIRECT_URI!,
 					FRONTEND_PROD_URL: process.env.FRONTEND_PROD_URL!,
+					FRONTEND_TEST_URL: process.env.FRONTEND_TEST_URL!,
 					JWT_SECRET: process.env.JWT_SECRET!,
 					MY_APP_DOMAIN: process.env.MY_APP_DOMAIN!,
-				},
-				bundling: {
-					forceDockerBundling: true,
-					minify: true,
-					sourceMap: true,
 				},
 			}
 		)
@@ -43,7 +44,7 @@ export class GoogleOAuthCdkStack extends cdk.Stack {
 				environment: {
 					JWT_SECRET: process.env.JWT_SECRET!,
 					FRONTEND_PROD_URL: process.env.FRONTEND_PROD_URL!,
-					MY_APP_DOMAIN: process.env.MY_APP_DOMAIN!,
+					FRONTEND_TEST_URL: process.env.FRONTEND_TEST_URL!,
 				},
 				bundling: {
 					forceDockerBundling: true,
@@ -63,7 +64,7 @@ export class GoogleOAuthCdkStack extends cdk.Stack {
 				handler: "handler",
 				environment: {
 					FRONTEND_PROD_URL: process.env.FRONTEND_PROD_URL!,
-					MY_APP_DOMAIN: process.env.MY_APP_DOMAIN!,
+					FRONTEND_TEST_URL: process.env.FRONTEND_TEST_URL!,
 				},
 				bundling: {
 					forceDockerBundling: true,
@@ -100,7 +101,7 @@ export class GoogleOAuthCdkStack extends cdk.Stack {
 		const callback = oauth.addResource("callback")
 		callback.addMethod(
 			"GET",
-			new apigateway.LambdaIntegration(oauthCallbackLambda)
+			new apigateway.LambdaIntegration(oauthCallbackFunction)
 		)
 
 		// Add session info endpoint
@@ -136,7 +137,7 @@ export class GoogleOAuthCdkStack extends cdk.Stack {
 		signout.addCorsPreflight({
 			allowOrigins: [
 				process.env.FRONTEND_PROD_URL!,
-				process.env.MY_APP_DOMAIN!,
+				process.env.FRONTEND_TEST_URL!,
 			],
 			allowMethods: ["POST", "OPTIONS"],
 			allowHeaders: ["Content-Type", "Authorization"],

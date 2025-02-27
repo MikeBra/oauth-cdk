@@ -44,13 +44,17 @@ describe("Google OAuth Callback Handler", () => {
 	})
 
 	it("should handle successful OAuth callback", async () => {
+		// Encode a random state and frontend origin in the state param
+		const stateObj = {
+			randomToken: "test_state", // TODO: Replace with a random token
+			frontendOrigin: process.env.FRONTEND_TEST_URL,
+		}
+		const state = btoa(JSON.stringify(stateObj))
+
 		const mockEvent: Partial<APIGatewayProxyEventWithCookies> = {
 			queryStringParameters: {
 				code: "test_auth_code",
-				state: "test_state",
-			},
-			headers: {
-				origin: process.env.FRONTEND_TEST_URL,
+				state: state,
 			},
 			cookies: ["oauth_state=test_state"],
 		}
@@ -60,8 +64,8 @@ describe("Google OAuth Callback Handler", () => {
 		expect(response.statusCode).toBe(302)
 		// Convert both URLs to URL objects to normalize slashes and compare
 		const locationUrl = new URL(response.headers?.Location as string)
-		const frontendUrl = new URL(process.env.FRONTEND_TEST_URL as string)
-		expect(locationUrl.origin).toBe(frontendUrl.origin)
+
+		expect(response.headers?.Location).toEqual(stateObj.frontendOrigin)
 	})
 
 	it("should handle missing code parameter", async () => {

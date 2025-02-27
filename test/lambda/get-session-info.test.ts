@@ -46,6 +46,11 @@ describe("get-session-info handler", () => {
 		const event = mockEvent({ Cookie: `session=${token}` })
 
 		const response = await handler(event)
+		console.log("HTTP Response:", {
+			statusCode: response.statusCode,
+			headers: response.headers,
+			body: JSON.parse(response.body),
+		})
 
 		expect(response.statusCode).toBe(200)
 		expect(JSON.parse(response.body)).toEqual(

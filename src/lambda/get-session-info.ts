@@ -10,11 +10,13 @@ export const handler = async (
 	try {
 		const cookies = event.headers.Cookie || event.headers.cookie
 		if (!cookies) {
-			return {
+			const response = {
 				statusCode: 401,
 				headers: corsHeaders,
 				body: JSON.stringify({ message: "Unauthorized" }),
 			}
+			console.log("Session info response:", response)
+			return response
 		}
 
 		const sessionCookie = cookies
@@ -35,17 +37,25 @@ export const handler = async (
 		}
 
 		const payload = jwt.verify(token, JWT_SECRET)
-		return {
+		const response = {
 			statusCode: 200,
 			headers: corsHeaders,
 			body: JSON.stringify(payload),
 		}
+		console.log("Session info successful response:", {
+			statusCode: response.statusCode,
+			headers: response.headers,
+			body: JSON.parse(response.body),
+		})
+		return response
 	} catch (error) {
 		console.error("Session validation error:", error)
-		return {
+		const response = {
 			statusCode: 401,
 			headers: corsHeaders,
 			body: JSON.stringify({ error: "Invalid session" }),
 		}
+		console.log("Session info error response:", response)
+		return response
 	}
 }
