@@ -91,9 +91,39 @@ export class GoogleOAuthCdkStack extends cdk.Stack {
 			},
 		})
 
+		// Add prepare Lambda
+		const oauthPrepareFunction = new nodejs.NodejsFunction(
+			this,
+			"OAuthPrepareFunction",
+			{
+				runtime: lambda.Runtime.NODEJS_18_X,
+				entry: path.join(__dirname, "../src/lambda/oauth-prepare.ts"),
+				handler: "handler",
+				environment: {
+					FRONTEND_TEST_URL: process.env.FRONTEND_TEST_URL!,
+					FRONTEND_PROD_URL: process.env.FRONTEND_PROD_URL!,
+				},
+				bundling: {
+					forceDockerBundling: true,
+					minify: true,
+					sourceMap: true,
+				},
+			}
+		)
+
 		// API Gateway
 		const api = new apigateway.RestApi(this, "GoogleOAuthApi", {
 			restApiName: "Google OAuth API",
+			defaultCorsPreflightOptions: {
+				allowOrigins: [
+					process.env.FRONTEND_TEST_URL!,
+					process.env.FRONTEND_PROD_URL!,
+				],
+				allowMethods: apigateway.Cors.ALL_METHODS,
+				allowHeaders: ["Content-Type", "Authorization", "Cookie"],
+				allowCredentials: true,
+				exposeHeaders: ["Set-Cookie"],
+			},
 		})
 
 		// OAuth callback endpoint
@@ -107,21 +137,6 @@ export class GoogleOAuthCdkStack extends cdk.Stack {
 		// Add session info endpoint
 		const auth = api.root.addResource("auth")
 		const session = auth.addResource("session")
-
-		// First: Add CORS preflight
-		// BUGBUG Use request origin from header rather than hardcoded urls
-		session.addCorsPreflight({
-			allowOrigins: [
-				process.env.FRONTEND_TEST_URL!,
-				process.env.FRONTEND_PROD_URL!,
-			],
-			allowMethods: ["GET", "OPTIONS"],
-			allowHeaders: ["Content-Type", "Authorization"],
-			allowCredentials: true,
-			exposeHeaders: ["Set-Cookie"],
-		})
-
-		// Then: Add the method
 		session.addMethod(
 			"GET",
 			new apigateway.LambdaIntegration(getSessionInfoFunction),
@@ -132,19 +147,6 @@ export class GoogleOAuthCdkStack extends cdk.Stack {
 
 		// Add signout endpoint
 		const signout = auth.addResource("signout")
-
-		// First: CORS
-		signout.addCorsPreflight({
-			allowOrigins: [
-				process.env.FRONTEND_PROD_URL!,
-				process.env.FRONTEND_TEST_URL!,
-			],
-			allowMethods: ["POST", "OPTIONS"],
-			allowHeaders: ["Content-Type", "Authorization"],
-			allowCredentials: true,
-		})
-
-		// Then: Method
 		signout.addMethod(
 			"POST",
 			new apigateway.LambdaIntegration(signoutFunction)
@@ -152,22 +154,19 @@ export class GoogleOAuthCdkStack extends cdk.Stack {
 
 		// Add signin endpoint
 		const signin = auth.addResource("signin")
-
-		// Add CORS preflight
-		signin.addCorsPreflight({
-			allowOrigins: [
-				process.env.FRONTEND_PROD_URL!,
-				process.env.FRONTEND_TEST_URL!,
-			],
-			allowMethods: ["POST", "OPTIONS"],
-			allowHeaders: ["Content-Type", "Authorization"],
-			allowCredentials: true,
-		})
-
-		// Add method
 		signin.addMethod(
 			"POST",
 			new apigateway.LambdaIntegration(signinFunction),
+			{
+				authorizationType: apigateway.AuthorizationType.NONE,
+			}
+		)
+
+		// Add prepare endpoint
+		const prepare = oauth.addResource("prepare")
+		prepare.addMethod(
+			"POST",
+			new apigateway.LambdaIntegration(oauthPrepareFunction),
 			{
 				authorizationType: apigateway.AuthorizationType.NONE,
 			}

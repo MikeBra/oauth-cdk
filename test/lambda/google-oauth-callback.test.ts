@@ -46,7 +46,7 @@ describe("Google OAuth Callback Handler", () => {
 	it("should handle successful OAuth callback", async () => {
 		// Encode a random state and frontend origin in the state param
 		const stateObj = {
-			randomToken: "test_state", // TODO: Replace with a random token
+			randomToken: "a_random_token",
 			frontendOrigin: process.env.FRONTEND_TEST_URL,
 		}
 		const state = btoa(JSON.stringify(stateObj))
@@ -56,7 +56,7 @@ describe("Google OAuth Callback Handler", () => {
 				code: "test_auth_code",
 				state: state,
 			},
-			cookies: ["oauth_state=test_state"],
+			cookies: ["oauth_state=a_random_token"],
 		}
 
 		const response = await handler(mockEvent as APIGatewayProxyEvent)
@@ -104,7 +104,7 @@ describe("Google OAuth Callback Handler", () => {
 
 		expect(response.statusCode).toBe(401)
 		expect(JSON.parse(response.body)).toEqual({
-			error: "Invalid or missing state parameter",
+			error: "State was not encoded correctly",
 		})
 	})
 })

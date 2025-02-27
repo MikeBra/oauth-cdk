@@ -1,6 +1,7 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from "aws-lambda"
 import { OAuth2Client, TokenPayload } from "google-auth-library"
 import { generateSessionToken } from "../utils/generateJWTSessionToken"
+import { extractCookieValue } from "../utils/cookie-utils"
 
 interface APIGatewayProxyEventWithCookies extends APIGatewayProxyEvent {
 	cookies?: string[]
@@ -53,28 +54,35 @@ export const handler = async (
 		let stateObj
 		try {
 			stateObj = JSON.parse(Buffer.from(state, "base64").toString())
-			if (!stateObj?.randomToken || !stateObj?.frontendOrigin) {
-				throw new Error("Invalid or missing state parameter")
-			}
+			if (!stateObj?.randomToken || !stateObj?.frontendOrigin)
+				return {
+					statusCode: 401,
+					body: JSON.stringify({
+						error: "Decoded state but missing required fields",
+					}),
+				}
 		} catch (error) {
 			return {
 				statusCode: 401,
-				body: JSON.stringify({ error: "Invalid or missing state parameter" }),
+				body: JSON.stringify({ error: "State was not encoded correctly" }),
 			}
 		}
-
 		const { randomToken, frontendOrigin } = stateObj
 
-		const cookieState = true // bugbug rework code
-			? "test_state"
-			: event.cookies
-					?.find((cookie) => cookie.startsWith("oauth_state="))
-					?.split("=")[1]
+
+
+		// Extract the oauth_state cookie using the utility function
+		const cookieState = extractCookieValue(event, "oauth_state")
+		console.log("Cookie state:", cookieState)
 
 		if (!randomToken || randomToken !== cookieState) {
 			return {
 				statusCode: 401,
-				body: JSON.stringify({ error: "Invalid or missing state parameter" }),
+				body: JSON.stringify({
+					error: "CSRF attack detected",
+					randomToken: randomToken,
+					cookieState: cookieState,
+				}),
 			}
 		}
 
@@ -100,11 +108,12 @@ export const handler = async (
 		// Generate a secure session token (e.g., JWT or a secure cookie)
 		const sessionToken = generateSessionToken(tokenPayload)
 
-		// Redirect back to the frontend
+		// Redirect back to the frontend with a session cookie.
+		// Also, clear the oauth_state cookie to prevent it from being used again.
+		// Todo: Add this line to the Set-Cookie header: `oauth_state=; HttpOnly; Secure; SameSite=None; Path=/; Max-Age=0`,
 		const response = {
 			statusCode: 302,
 			headers: {
-				// bugbug When the front end and backend are using the same domain, we can use the Strict SameSite attribute.
 				"Set-Cookie": `session=${sessionToken}; HttpOnly; Secure; SameSite=None; Path=/; Max-Age=3600`,
 				Location: frontendOrigin,
 			},
@@ -115,6 +124,7 @@ export const handler = async (
 			headers: response.headers,
 			redirectLocation: response.headers.Location,
 		})
+
 		return response
 	} catch (error) {
 		console.error("Detailed error:", {
