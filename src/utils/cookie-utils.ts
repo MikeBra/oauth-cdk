@@ -13,7 +13,6 @@ export const extractCookieValue = (
 ): string | undefined => {
 	// First try the cookies array if available
 	if (event.cookies?.length) {
-		console.log("Cookies array:", event.cookies) // bugbug remove
 		const cookie = event.cookies.find((c) => c.startsWith(`${cookieName}=`))
 		if (cookie) {
 			return cookie.split("=")[1]
@@ -22,7 +21,6 @@ export const extractCookieValue = (
 
 	// Fallback to parsing the Cookie header
 	const cookieHeader = event.headers?.cookie || event.headers?.Cookie
-	console.log("Cookie header:", cookieHeader) // bugbug remove
 	if (cookieHeader) {
 		const cookies = cookieHeader.split(";")
 		const targetCookie = cookies.find((c) =>

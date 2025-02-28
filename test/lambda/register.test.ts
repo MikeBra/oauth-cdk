@@ -1,46 +1,49 @@
 import { APIGatewayProxyEvent } from "aws-lambda"
-import { handler } from "../../src/lambda/signin"
+import { handler } from "../../src/lambda/register"
 import bcrypt from "bcrypt"
 import { dynamodb } from "../../src/utils/dynamodb"
-import { QueryCommand } from "@aws-sdk/lib-dynamodb"
+import { QueryCommand, PutCommand } from "@aws-sdk/lib-dynamodb"
 
 jest.mock("bcrypt", () => ({
-	compare: jest.fn().mockResolvedValue(true),
+	hash: jest.fn().mockResolvedValue("hashed_password_mock"),
 }))
 
 jest.mock("../../src/utils/dynamodb", () => ({
 	dynamodb: {
 		send: jest.fn().mockImplementation((command) => {
 			if (command instanceof QueryCommand) {
-				const now = new Date().toISOString()
-				return Promise.resolve({
-					Items: [
-						{
-							PK: "USER#123",
-							SK: "USER",
-							id: "123",
-							email: "test@example.com",
-							name: "Test User",
-							hashedPassword: "hashed_password_mock",
-							GSI1PK: "USER",
-							GSI1SK: now,
-							email_index: "test@example.com",
-							createdAt: now,
-							updatedAt: now,
-						},
-					],
-				})
+				return Promise.resolve({ Items: [] }) // No existing user by default
+			}
+			if (command instanceof PutCommand) {
+				return Promise.resolve({}) // Successful put
 			}
 			return Promise.resolve({})
 		}),
 	},
 	TABLE_NAME: "test-table",
+	createUserItem: jest
+		.fn()
+		.mockImplementation((userId, email, hashedPassword, name) => {
+			const now = new Date().toISOString()
+			return {
+				PK: `USER#${userId}`,
+				SK: "USER",
+				id: userId,
+				email,
+				hashedPassword,
+				name,
+				GSI1PK: "USER",
+				GSI1SK: now,
+				email_index: email,
+				createdAt: now,
+				updatedAt: now,
+			}
+		}),
 }))
 
-describe("signin handler", () => {
+describe("register handler", () => {
 	beforeAll(() => {
 		process.env.FRONTEND_TEST_URL = "http://localhost:3000"
-		process.env.JWT_SECRET = "test_secret"
 	})
 
 	beforeEach(() => {
@@ -64,21 +67,19 @@ describe("signin handler", () => {
 		resource: "",
 	})
 
-	it("should return success for valid credentials", async () => {
+	it("should register a new user successfully", async () => {
 		const event = mockEvent({
 			email: "test@example.com",
 			password: "password123",
+			name: "Test User",
 		})
 
 		const response = await handler(event)
 		const body = JSON.parse(response.body)
 
-		expect(response.statusCode).toBe(200)
-		expect(bcrypt.compare).toHaveBeenCalledWith(
-			"password123",
-			"hashed_password_mock"
-		)
-		expect(dynamodb.send).toHaveBeenCalledTimes(1)
+		expect(response.statusCode).toBe(201)
+		expect(bcrypt.hash).toHaveBeenCalledWith("password123", 10)
+		expect(dynamodb.send).toHaveBeenCalledTimes(2) // Once for query, once for put
 
 		const queryCall = (dynamodb.send as jest.Mock).mock.calls[0][0]
 		expect(queryCall).toBeInstanceOf(QueryCommand)
@@ -91,23 +92,33 @@ describe("signin handler", () => {
 			},
 		})
 
-		expect(response.headers).toEqual(
-			expect.objectContaining({
-				"Access-Control-Allow-Origin": process.env.FRONTEND_TEST_URL!,
-				"Access-Control-Allow-Credentials": "true",
-				"Set-Cookie": expect.stringContaining("session="),
-			})
-		)
+		const putCall = (dynamodb.send as jest.Mock).mock.calls[1][0]
+		expect(putCall).toBeInstanceOf(PutCommand)
+		expect(putCall.input).toEqual({
+			TableName: "test-table",
+			Item: expect.objectContaining({
+				PK: expect.stringMatching(/^USER#.+/),
+				SK: "USER",
+				email: "test@example.com",
+				name: "Test User",
+				hashedPassword: "hashed_password_mock",
+				GSI1PK: "USER",
+				GSI1SK: expect.any(String),
+				email_index: "test@example.com",
+				createdAt: expect.any(String),
+				updatedAt: expect.any(String),
+			}),
+		})
 
-		// Verify response structure
-		expect(body).toHaveProperty("message", "Signed in successfully")
+		// First verify the overall response structure
+		expect(body).toHaveProperty("message", "User registered successfully")
 		expect(body).toHaveProperty("user")
 
-		// Verify user object
+		// Then verify each property of the user object individually
 		const user = body.user
-		expect(user).toHaveProperty("PK", "USER#123")
+		expect(user).toHaveProperty("PK", expect.stringMatching(/^USER#.+/))
 		expect(user).toHaveProperty("SK", "USER")
-		expect(user).toHaveProperty("id", "123")
+		expect(user).toHaveProperty("id", expect.any(String))
 		expect(user).toHaveProperty("email", "test@example.com")
 		expect(user).toHaveProperty("name", "Test User")
 		expect(user).toHaveProperty("GSI1PK", "USER")
@@ -123,46 +134,28 @@ describe("signin handler", () => {
 		expect(user).not.toHaveProperty("hashedPassword")
 	})
 
-	it("should return 401 for non-existent user", async () => {
-		;(dynamodb.send as jest.Mock).mockResolvedValueOnce({ Items: [] })
-		const event = mockEvent({
-			email: "nonexistent@example.com",
-			password: "password123",
+	it("should return 409 if user already exists", async () => {
+		;(dynamodb.send as jest.Mock).mockResolvedValueOnce({
+			Items: [{ email: "test@example.com" }],
 		})
 
-		const response = await handler(event)
-		expect(response.statusCode).toBe(401)
-		expect(JSON.parse(response.body)).toEqual({
-			error: "Invalid credentials",
-		})
-	})
-
-	it("should return 401 for invalid password", async () => {
-		;(bcrypt.compare as jest.Mock).mockResolvedValueOnce(false)
 		const event = mockEvent({
 			email: "test@example.com",
-			password: "wrongpassword",
+			password: "password123",
+			name: "Test User",
 		})
 
 		const response = await handler(event)
-		expect(response.statusCode).toBe(401)
+		expect(response.statusCode).toBe(409)
 		expect(JSON.parse(response.body)).toEqual({
-			error: "Invalid credentials",
+			error: "User already exists",
 		})
 	})
 
-	it("should return 400 for null body", async () => {
+	it("should return 400 for missing body", async () => {
 		const event = mockEvent(null)
 		const response = await handler(event)
-		expect(response.statusCode).toBe(400)
-		expect(JSON.parse(response.body)).toEqual({
-			error: "Missing request body",
-		})
-	})
 
-	it("should return 400 for empty object body", async () => {
-		const event = mockEvent({})
-		const response = await handler(event)
 		expect(response.statusCode).toBe(400)
 		expect(JSON.parse(response.body)).toEqual({
 			error: "Missing request body",
@@ -172,10 +165,11 @@ describe("signin handler", () => {
 	it("should return 400 for missing required fields", async () => {
 		const event = mockEvent({
 			email: "test@example.com",
-			// missing password
+			// missing password and name
 		})
 
 		const response = await handler(event)
+
 		expect(response.statusCode).toBe(400)
 		expect(JSON.parse(response.body)).toEqual({
 			error: "Missing required fields",

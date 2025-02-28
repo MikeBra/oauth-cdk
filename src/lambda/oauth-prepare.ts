@@ -38,11 +38,7 @@ export const handler = async (
 			},
 			body: JSON.stringify({ message: "OAuth state prepared" }),
 		}
-		console.log("OAuth prepare response:", {
-			statusCode: response.statusCode,
-			headers: response.headers,
-			body: JSON.parse(response.body),
-		})
+
 		return response
 	} catch (error) {
 		console.error("OAuth prepare error:", error)

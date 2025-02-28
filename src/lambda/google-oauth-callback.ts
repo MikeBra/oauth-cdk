@@ -69,11 +69,8 @@ export const handler = async (
 		}
 		const { randomToken, frontendOrigin } = stateObj
 
-
-
 		// Extract the oauth_state cookie using the utility function
 		const cookieState = extractCookieValue(event, "oauth_state")
-		console.log("Cookie state:", cookieState)
 
 		if (!randomToken || randomToken !== cookieState) {
 			return {
@@ -119,11 +116,6 @@ export const handler = async (
 			},
 			body: "", // Required by API Gateway
 		}
-		console.log("OAuth callback successful response:", {
-			statusCode: response.statusCode,
-			headers: response.headers,
-			redirectLocation: response.headers.Location,
-		})
 
 		return response
 	} catch (error) {

@@ -10,9 +10,7 @@ export const getCorsHeaders = (event: APIGatewayProxyEvent) => {
 		process.env.FRONTEND_PROD_URL,
 	].filter(Boolean) as string[]
 	const isAllowedOrigin = allowedOrigins.includes(origin!)
-	if (isAllowedOrigin) {
-		console.log("Request origin allowed", origin)
-	} else {
+	if (!isAllowedOrigin) {
 		console.log("Request origin not allowed", origin)
 	}
 

@@ -6,8 +6,8 @@ describe("oauth-prepare handler", () => {
 		process.env.FRONTEND_TEST_URL = "http://localhost:3000"
 	})
 
-	const mockEvent = (body: any): APIGatewayProxyEvent => ({
-		body: JSON.stringify(body),
+	const mockEvent = (body?: any): APIGatewayProxyEvent => ({
+		body: body === null ? null : JSON.stringify(body),
 		headers: {
 			origin: process.env.FRONTEND_TEST_URL,
 		},

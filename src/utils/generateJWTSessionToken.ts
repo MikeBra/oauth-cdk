@@ -6,7 +6,6 @@ export function generateSessionToken(user: TokenPayload) {
 	const payload = {
 		sub: user.sub, // Google's unique user ID
 		email: user.email, // User email
-		name: user.name, // User name (optional)
 		role: "user", // Optional: Role-based access control
 	}
 

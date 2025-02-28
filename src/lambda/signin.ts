@@ -1,6 +1,9 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from "aws-lambda"
 import jwt from "jsonwebtoken"
 import { getCorsHeaders } from "../utils/cors-headers"
+import bcrypt from "bcrypt"
+import { QueryCommand } from "@aws-sdk/lib-dynamodb"
+import { dynamodb, TABLE_NAME } from "../utils/dynamodb"
 
 interface SignInRequest {
 	email: string
@@ -32,12 +35,45 @@ export const handler = async (
 
 		const { email, password } = parsedBody as SignInRequest
 
-		// TODO: Validate credentials against DynamoDB
-		// Stubbed response for now
-		const mockUser = {
-			id: "123",
-			email,
-			name: "Test User",
+		if (!email || !password) {
+			return {
+				statusCode: 400,
+				headers: corsHeaders,
+				body: JSON.stringify({ error: "Missing required fields" }),
+			}
+		}
+
+		// Query DynamoDB for user by email
+		const userResult = await dynamodb.send(
+			new QueryCommand({
+				TableName: TABLE_NAME,
+				IndexName: "EmailIndex",
+				KeyConditionExpression: "email = :email",
+				ExpressionAttributeValues: {
+					":email": email,
+				},
+			})
+		)
+
+		if (!userResult.Items || userResult.Items.length === 0) {
+			return {
+				statusCode: 401,
+				headers: corsHeaders,
+				body: JSON.stringify({ error: "Invalid credentials" }),
+			}
+		}
+
+		const user = userResult.Items[0]
+
+		// Compare the password
+		const isValidPassword = await bcrypt.compare(password, user.hashedPassword)
+
+		if (!isValidPassword) {
+			return {
+				statusCode: 401,
+				headers: corsHeaders,
+				body: JSON.stringify({ error: "Invalid credentials" }),
+			}
 		}
 
 		const JWT_SECRET = process.env.JWT_SECRET
@@ -47,15 +83,18 @@ export const handler = async (
 
 		const sessionToken = jwt.sign(
 			{
-				sub: mockUser.id,
-				email: mockUser.email,
-				name: mockUser.name,
+				sub: user.id,
+				email: user.email,
+				name: user.name,
 			},
 			JWT_SECRET,
 			{
 				expiresIn: "1h",
 			}
 		)
+
+		// Remove sensitive data before sending response
+		const { hashedPassword, ...safeUserData } = user
 
 		return {
 			statusCode: 200,
@@ -65,16 +104,16 @@ export const handler = async (
 			},
 			body: JSON.stringify({
 				message: "Signed in successfully",
-				user: mockUser,
+				user: safeUserData,
 			}),
 		}
 	} catch (error) {
 		console.error("Signin error:", error)
 		return {
-			statusCode: 401,
+			statusCode: 500,
 			headers: corsHeaders,
 			body: JSON.stringify({
-				error: "Invalid credentials",
+				error: "Authentication failed",
 			}),
 		}
 	}

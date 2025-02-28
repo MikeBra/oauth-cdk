@@ -15,10 +15,6 @@ export const handler = async (
 		},
 		body: JSON.stringify({ message: "Signed out successfully" }),
 	}
-	console.log("Signout response:", {
-		statusCode: response.statusCode,
-		headers: response.headers,
-		body: JSON.parse(response.body),
-	})
+
 	return response
 }

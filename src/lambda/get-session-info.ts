@@ -15,7 +15,7 @@ export const handler = async (
 				headers: corsHeaders,
 				body: JSON.stringify({ message: "Unauthorized" }),
 			}
-			console.log("Session info response:", response)
+
 			return response
 		}
 
@@ -42,11 +42,7 @@ export const handler = async (
 			headers: corsHeaders,
 			body: JSON.stringify(payload),
 		}
-		console.log("Session info successful response:", {
-			statusCode: response.statusCode,
-			headers: response.headers,
-			body: JSON.parse(response.body),
-		})
+
 		return response
 	} catch (error) {
 		console.error("Session validation error:", error)
@@ -55,7 +51,7 @@ export const handler = async (
 			headers: corsHeaders,
 			body: JSON.stringify({ error: "Invalid session" }),
 		}
-		console.log("Session info error response:", response)
+
 		return response
 	}
 }
